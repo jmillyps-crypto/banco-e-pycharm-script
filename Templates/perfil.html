@@ -46,10 +46,22 @@
             <h2>Meu Perfil</h2>
             <p class="subtitulo">Confira e Gerencie suas informações</p>
 
+              {% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages">
+{% for category, message in messages %}
+<div class="flash {{ category }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+         {% if usuario%}
             <form action="">
                 <div class="topo">
                     <img src="assets/img/icone_perfil.png" alt="Foto de perfil" class="avatar">
                     <div class="campos">
+
 
                         <label for="nome">Nome completo</label>
                         <p>{{ nome }}</p>
@@ -65,10 +77,11 @@
                     </div>
                 </div>
 
-                <a href="{{ url_for('editar_perfil')}}">
-                    <button type="submit" class="btn">Editar Perfil</button>
-                </a>
             </form>
+         {% endif%}
+            <a href="{{ url_for('editar_perfil', id=usuario[0])}}">
+                    <button type="submit" class="btn">Editar Perfil</button>
+            </a>
 
             <a href="{{ url_for('logout')}}">
                 <button type="submit" class="btn">Sair</button>
