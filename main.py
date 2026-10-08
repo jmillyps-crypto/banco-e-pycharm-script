@@ -5,13 +5,14 @@ from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
-Bcrypt = Bcrypt(app)
+bcrypt = Bcrypt(app)
+app.config['SECRET_KEY'] = 'Aqui_e_a_chave_da_turma_a'
 
 #CONEXÃO COM O BANCO
 host = 'localhost'
-database = r'C:\Users\Aluno\Desktop\jamily\BANCO.FDB'
+database = r'C:\Users\marco\Downloads\BANCO.FDB'
 user = 'SYSDBA'
-password = 'sysdba'
+password = 'SYSDBA'
 
 con = fdb.connect(host=host, database=database, user=user, password=password)
 
@@ -20,7 +21,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/cadastro_usu') #ROTA QUE DIRECIONA PARA A PÁGINA CADASTRO DE USUÁRIO
-def index():
+def cadastro_usu():
     return render_template('cadastro_usuario.html')
 
 # VERIFICAR SENHA FORTE
@@ -37,11 +38,11 @@ def senha_forte(senha):
         return True
 
 @app.route('/cadastrar', methods=['POST'])  #ROTA QUE REALIZA O CADASTRO
-def cadastro_usu():
+def cadastrar():
     nome = request.form['nome']
     email = request.form['email']
     senha = request.form['senha']
-    mao_de_obra = request.form['mao_de_obra']
+    mao_obra = request.form['mao_obra']
 
     if not senha_forte(senha):
         flash("Senha fraca! Precisa conter 8 ou mais caracteres, pelo menos uma letra maiúscula, um número e um caracter especial")
@@ -63,8 +64,8 @@ def cadastro_usu():
         senha_hash = bcrypt.generate_password_hash(senha).decode('utf-8')
 
         #EXECUÇÃO DO INSERT
-        cursor.execute(""" INSERT INTO usuario (nome, email, senha, mao_de_obra, tentativas)
-                           VALUES (?, ?, ?, ?)""", (nome, email, senha_hash,mao_de_obra, 0))
+        cursor.execute(""" INSERT INTO usuario (nome, email, senha, mao_obra, tentativas)
+                           VALUES (?, ?, ?, ?, ?)""", (nome, email, senha_hash,mao_obra, 0))
 
         con.commit() #SALVA AS INFORMAÇÕES
         flash("Usuário cadastrado com sucesso")
@@ -80,7 +81,7 @@ def cadastro_usu():
         cursor.close() #FECHAR A CONVERSA COM O BANCO
 
 @app.route('/login_usu', methods=['GET', 'POST'])
-def login():
+def login_usu():
     if request.method == 'GET':
         return render_template('login_usuario.html')
 
@@ -89,53 +90,115 @@ def login():
 
     cursor = con.cursor()
     try:
-        cursor.execute("""SELECT id_usuario, senha, tentativas
+        cursor.execute("""SELECT id_usuario,nome, senha, tentativas
         FROM usuario u
         WHERE u.email = ? """, (email,))
 
-    usuario = cursor.fetchone()
-    if not usuario:
-        flash("Usuário não encontrado")
-        return redirect(url_for('login'))
+        usuario = cursor.fetchone()
 
-    id_usuario, senha_hash, tentativas = usuario
+        if not usuario:
+            flash("Usuário não encontrado")
+            return redirect(url_for('login_usu'))
 
-    if tentativas >= 3:
-        flash("Você passou de 3 tentativas! Sua conta foi bloqueada.")
-        return redirect(url_for('login'))
+        id_usuario,nome, senha_hash, tentativas = usuario
 
-    if usuario:
-        if bcrypt.check_password_hash(senha_hash, senha):
+        if tentativas >= 3:
+            flash("Você passou de 3 tentativas! Sua conta foi bloqueada.")
+            return redirect(url_for('login_usu'))
 
-            cursor.execute("""UPDATE usuario
-            set tentativas = 0
-            where id_usuario = ?""", (id_usuario,))
+        if usuario:
+            if bcrypt.check_password_hash(senha_hash, senha):
 
-            con.commit()
+                cursor.execute("""UPDATE usuario
+                set tentativas = 0
+                where id_usuario = ?""", (id_usuario,))
 
-            session['id_usuario'] = id_usuario
+                con.commit()
 
-            flash('Conta logada')
+                session['id_usuario'] = id_usuario
+                session['usuario_nome'] = nome
+
+                flash('Conta logada')
+                return redirect(url_for('home'))
+
+            else:
+
+                cursor.execute("""UPDATE usuario
+                set tentativas = tentativas + 1
+                where id_usuario = ?""", (id_usuario,))
+
+                con.commit()
+
+                if tentativas + 1 >= 3:
+                    flash('Você passou de 3 tentativas! Sua conta foi bloqueada.')
+                else:
+                    flash('Email ou senha inválida')
+                return redirect(url_for('login_usu'))
+        return render_template('login_usu.html')
+
+    except Exception as e:
+        flash(f"Ocorreu um error -> {e}")
+        con.rollback()
+        return redirect(url_for('login_usu'))
+    finally:
+        cursor.close()
+
+
+@app.route('/perfil') #ROTA DA PAGINA DE PERFIL DO USUARIO
+def perfil():
+
+    if 'id_usuario' not in session:
+        return redirect(url_for('login_usu'))
+
+    cursor = con.cursor()
+    try:
+        cursor.execute("""SELECT id_usuario,nome, email, senha, mao_obra
+        FROM usuario u
+        WHERE id_usuario = ? """, (session['id_usuario'],))
+
+        usuario = cursor.fetchone()
+
+
+        if not usuario:
+            flash('Usuário não encontrado')
             return redirect(url_for('home'))
 
-    else:
+        id_usuario,nome, email, senha_hash, mao_obra = usuario
 
-        cursor.execute("""UPDATE usuario
-        set tentativas = tentativas + 1
-        where id_usuario = ?""", (id_usuario,))
+        return render_template(
+            'perfil.html',
+            nome=nome,
+            email=email,
+            mao_obra=mao_obra
+        )
 
-        con.commit()
+    except Exception as e:
+        flash(f'Ocorreu um erro -> {e}')
+        return redirect(url_for('home'))
 
-        if tentativas + 1 >= 3:
-            flash('Você passou de 3 tentativas! Sua conta foi bloqueada.')
-        else:
-            flash('Email ou senha inválida')
+    finally:
+        cursor.close()
+
+
+
+
+
+@app.route('/home') #ROTA INCIAL - LANDING PAGE
+def home():
+    if 'usuario_nome' not in session:
         return redirect(url_for('login_usu'))
-    return render_template('login_usu.html')
 
-except Exception as e:
-    flash(f"Ocorreu um error -> {e}")
-    con.rollback()
+    return render_template('home.html')
+
+@app.route('/logout') #limpar da lista
+def logout():
+    if 'id_usuario' in session:
+        session.pop('id_usuario')
+        flash('Logout com sucesso')
+    else:
+        flash('Nenhuma conta está logada')
+
     return redirect(url_for('login_usu'))
-finally:
-    cursor.close()
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel='stylesheet' href="{{ url_for('static',filename='indesss.css')}}">
+</head>
+<body>
+<header>
+
+
+<div class="pegatudo">
+<div class="logotitulo">
+<img src='assets/img/logo.png' alt="logodoheader">
+<!-- A imagem é do header de cima a logo -->
+<div class="titulosubtitulo">
+<h2>Preço<span>Certo</span></h2>
+<!-- Nome da marca (o span é para estilizar apenas a palavra Certo sem mudar o preço -->
+<p>PRECIFICAÇÃO AFETIVA</p>
+<!-- Suntitulo -->
+</div>
+</div>
+<div class="voltar">
+<a href="index.html">
+<button>Voltar</button>
+
+</a>
+</div>
+
+</div>
+
+</header>
+
+<div class="formulario">
+    <img src="assets/img/imgformulario.png" alt="imgdoformulario">
+    <!-- img do formulario -->
+
+    <h2>Preço<span>Certo</span></h2>
+    <!-- Nome da marca (o span é para estilizar apenas a palavra Certo sem mudar o preço -->
+    <p class="subtitulo">PRECIFICAÇÃO AFETIVA</p>
+    <!-- Subtitulo -->
+
+    <h3>Acesse sua conta</h3>
+    <p class="pdoentre">Entre para continuar usando o PreçoCerto </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages">
+{% for category, message in messages %}
+<div class="flash {{ category }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+    <form action="/login_usu" method="POST">
+        <div class="input_email_senha">
+        <label for="email">E-mail</label>
+        <input type="email" id=email name="email" placeholder="seu@email.com" required>
+
+        <label for="email">Senha</label>
+        <input type="password" id=senha name="senha" placeholder="Digite sua senha" required>
+        </div>
+
+        <div class="botao1">
+            <a href="{{ url_for('login_usu') }}">
+                <button type="submit">Entrar no Sistema</button>
+            </a>
+        </div>
+
+    </form>
+
+        <p class="p_do_ou">ou</p>
+        <p class="p_do_ainda">Ainda não tem uma conta?</p>
+
+        <div class="botao2">
+            <a href="{{ url_for('cadastro_usu') }}">
+                <button type="submit">Criar conta grátis</button>
+            </a>
+        </div>
+
+</div>
+
+    <footer>
+        <div class="logo-footer">
+            <img src="assets/img/chapeu.png" alt="Logo">
+        <div>
+        <h2>Preço<span>Certo</span></h2>
+        <p>PRECIFICAÇÃO AFETIVA</p>
+        </div>
+            <span class="frase">Precificação afetiva para negócios reais.</span>
+        </div>
+
+        <span>© 2026 PreçoCerto</span>
+    </footer>
+
+
+
+
+</body>
+</html>
+
+
+

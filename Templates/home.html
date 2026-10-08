@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h3>Olá {{ session['usuario_nome'] }}</h3>
+<a href="{{ url_for('logout')}}">
+    <button type="submit" class="btn">Sair</button>
+</a>
+
+<a href="{{ url_for('perfil')}}">
+    <button type="submit" class="btn">Configurações</button>
+</a>
+
+</body>
+</html>
