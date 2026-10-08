@@ -10,9 +10,9 @@ app.config['SECRET_KEY'] = 'Aqui_e_a_chave_da_turma_a'
 
 #CONEXÃO COM O BANCO
 host = 'localhost'
-database = r'C:\Users\Aluno\Desktop\jamily\BANCO.FDB'
+database = r'C:\Users\marco\Downloads\BANCO.FDB'
 user = 'SYSDBA'
-password = 'sysdba'
+password = 'SYSDBA'
 
 con = fdb.connect(host=host, database=database, user=user, password=password)
 
@@ -60,7 +60,7 @@ def cadastrar():
 
     try:  #TRATAMENTO DE ERRO
 
-        #SELECIONA O USUARIO QUE POSSUI ESTE EMAIL
+        #SELECIONA O USUARIO QUE POSSUI ESTE EMAIL DIGITADO
         cursor.execute("""SELECT 1
                           FROM usuario u
                           WHERE email = ?""", (email,))
@@ -109,7 +109,7 @@ def login_usu():
         FROM usuario u
         WHERE u.email = ? """, (email,))
 
-        # CONFERFE SE JÁ TEM ESTE USUÁRIO CADASTRADO E PEGA SOMENTE ELE
+        # CONFERFE SE JÁ TEM ESTES DADOS DE USUÁRIO CADASTRADO E PEGA SOMENTE ELE
         usuario = cursor.fetchone()
 
         if not usuario: #SE NÃO TIVER ESTE USUÁRIO CADASTRADO
@@ -125,7 +125,7 @@ def login_usu():
             return redirect(url_for('login_usu'))
 
 
-        if usuario: #SE ESTIVER ESTE USUÁRIO CADADTRADO
+        if usuario: #SE ESTE USUÁRIO ESTIVER CADASTRADO
             if bcrypt.check_password_hash(senha_hash, senha): # VERIFICA SE A SENHA INSERIDA É IGUAL A QUE FOI CADASTRADA
 
                 #ATUALIZA O NUMERO DE TENTATIVAS PARA ZERO, APOS ACERTAR A SENHA DE USUÁRIO
@@ -179,7 +179,7 @@ def perfil():
         FROM usuario u
         WHERE id_usuario = ? """, (session['id_usuario'],))
 
-        # CONFERFE SE JÁ TEM ESTE USUÁRIO CADASTRADO E PEGA SOMENTE ELE
+        # CONFERFE SE JÁ TEM ESTES DADOS DE USUÁRIO CADASTRADO E PEGA SOMENTE ELE
         usuario = cursor.fetchone()
 
         #SE ESTE USUÁRIO NÃO EXISTIR
@@ -253,7 +253,7 @@ def editar_perfil(id):
                 if contador == 3: #SE VERIFICAR 3 SENHAS
                     break
 
-                    # VERIFICA SE A NOVA SENHA É IGUAL A QUE FOI CADASTRADA
+                    # VERIFICA SE A NOVA SENHA É IGUAL A UMA DAS QUE FORAM CADASTRADAS
                 if bcrypt.check_password_hash(senha_antiga[0], nova_senha):
                     flash('Você não pode usar uma das últimas 3 senhas.')
                     return redirect(url_for('editar_perfil', id=id_usuario))
@@ -270,23 +270,24 @@ def editar_perfil(id):
                            INSERT INTO senhas_utilizadas (id_usuario, senha)
                            VALUES (?, ?)""", (id_usuario, senha_atual))
 
-            # GERA CRIPITOGRAFIA DA NOVA SENHA
-            senha_hash = bcrypt.generate_password_hash(nova_senha).decode('utf-8')
 
-            # SELECIONA O USUARIO QUE POSSUI ESTE EMAIL
+            # SELECIONA O USUARIO QUE POSSUI ESTE NOVO EMAIL DIGITADO
             cursor.execute("""SELECT id_usuario
                               FROM usuario 
-                              WHERE email = ? and id_usuario NOT IN = (
-                              SELECT id_usuario FROM usuario
-                              where id_usuario = ?)""", (email, id_usuario))
+                              WHERE email = ? """, (email,))
 
 
             # CONFERFE SE JÁ TEM ESTE EMAIL CADASTRADO E PEGA SOMENTE ELE
             email_ja_cadastrado = cursor.fetchone()
 
-            if email_ja_cadastrado:  # SE JA TIVER ESTE EMAIL CADASTRADO
-                flash('Erro: Email já utilizado por outro usuário')
-                return redirect(url_for('editar_perfil'))
+
+            if email_ja_cadastrado: # SE JA TIVER ESTE EMAIL CADASTRADO EM ALGUM USUÁRIO
+                if email_ja_cadastrado[0] != id_usuario: #SE ESSE EMAIL PERTENCE A UM ID DIFERENTE DESTE USUÁRIO
+                    flash('Erro: Email já utilizado por outro usuário')
+                    return redirect(url_for('editar_perfil', id=id_usuario))
+
+            # GERA CRIPITOGRAFIA DA NOVA SENHA
+            senha_hash = bcrypt.generate_password_hash(nova_senha).decode('utf-8')
 
             #ALTERAÇÃO/ EDIÇÃO DOS DADOS DO USUÁRIO
             cursor.execute(""" UPDATE usuario SET nome = ?, email = ?, senha = ?,mao_obra = ?
